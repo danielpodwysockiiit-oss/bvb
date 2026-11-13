@@ -31,6 +31,11 @@ td img{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-ri
 #enter button{background:var(--y);border:0;padding:18px 34px;font:700 24px Oswald;border-radius:40px;cursor:pointer;text-transform:uppercase;animation:p 1.5s infinite}
 #mute{position:fixed;right:12px;bottom:12px;background:var(--y);border:0;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;z-index:10}
 footer{text-align:center;color:#777;font-size:12px;padding:24px 12px}
+
+.tabs{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{white-space:nowrap;margin:0;flex:0 0 auto}
+td{white-space:nowrap}td:first-child{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:520px){.card{padding:12px}.tabs button{padding:5px 10px;font-size:13px}table{font-size:13px}td,th{padding:8px 3px}th{font-size:10px;letter-spacing:0}.pos{width:18px}td img{width:18px;height:18px;margin-right:4px}}
 </style></head><body>
 <div id="enter"><div><img src="https://crests.football-data.org/4.png" width="140"><h1>Echte Liebe</h1><button id="go">Los geht's!</button></div></div>
 <div id="live"></div><div id="goal"><div><h3>TORRRR!</h3><p id="gtxt"></p></div></div>
@@ -67,9 +72,9 @@ all=matches;drawMatches();
 nextM=matches.find(m=>['SCHEDULED','TIMED'].includes(m.status));
 const live=matches.find(m=>['IN_PLAY','PAUSED','LIVE'].includes(m.status));
 drawNext();live?drawLive(live):($('#live').style.display='none',lastG=null)}catch(e){}}
-function drawNext(){const m=nextM;if(!m){$('#next').textContent='Kein Spiel angesetzt.';return}
+let shown=null;function drawNext(){const m=nextM;const key=m?m.id+m.utcDate:null;if(key&&key===shown&&$('#cd'))return;shown=key;if(!m){$('#next').textContent='Kein Spiel angesetzt.';return}
 const home=m.homeTeam.id==BVB;
-$('#next').innerHTML=`<div class="vs"><div><img src="${m.homeTeam.crest}"><br>${nm(m.homeTeam)}</div><b style="font-size:28px;color:var(--y)">VS</b><div><img src="${m.awayTeam.crest}"><br>${nm(m.awayTeam)}</div></div><div class="sm" style="text-align:center;margin-top:8px">${m.competition?.name||''} · ${home?'Heimspiel':'Auswärtsspiel'} · ${fmt(m.utcDate)}</div><div class="cd" id="cd"></div>`}
+$('#next').innerHTML=`<div class="vs"><div><img src="${m.homeTeam.crest}"><br>${nm(m.homeTeam)}</div><b style="font-size:28px;color:var(--y)">VS</b><div><img src="${m.awayTeam.crest}"><br>${nm(m.awayTeam)}</div></div><div class="sm" style="text-align:center;margin-top:8px">${m.competition?.name||''} · ${home?'Heimspiel':'Auswärtsspiel'} · ${fmt(m.utcDate)}</div><div class="cd" id="cd"></div>`;tick()}
 function tick(){const el=$('#cd');if(!el||!nextM)return;let s=Math.max(0,Math.floor((new Date(nextM.utcDate)-Date.now())/1000));
 const v=[['Tage',86400],['Std',3600],['Min',60],['Sek',1]].map(([l,d])=>{const n=Math.floor(s/d);s-=n*d;return`<div><b>${String(n).padStart(2,'0')}</b><span>${l}</span></div>`});el.innerHTML=v.join('')}
 setInterval(tick,1000);
