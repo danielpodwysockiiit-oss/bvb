@@ -36,6 +36,9 @@ footer{text-align:center;color:#777;font-size:12px;padding:24px 12px}
 .tabs button{white-space:nowrap;margin:0;flex:0 0 auto}
 td{white-space:nowrap}td:first-child{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:520px){.card{padding:12px}.tabs button{padding:5px 10px;font-size:13px}table{font-size:13px}td,th{padding:8px 3px}th{font-size:10px;letter-spacing:0}.pos{width:18px}td img{width:18px;height:18px;margin-right:4px}}
+.mw{border-bottom:1px solid var(--l)}.mw .sm{border:0;padding-bottom:7px}.mw.click{cursor:pointer}.mw.click:hover{background:#ffffff0d}
+.det{display:none;padding:4px 6px 12px;font-size:14px}.mw.open .det{display:block}.dh{color:var(--y);text-transform:uppercase;font-size:12px;letter-spacing:1px;margin:6px 0 4px}
+.ev2{padding:2px 0}.lu{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 </style></head><body>
 <div id="enter"><div><img src="https://crests.football-data.org/4.png" width="140"><h1>Echte Liebe</h1><button id="go">Los geht's!</button></div></div>
 <div id="live"></div><div id="goal"><div><h3>TORRRR!</h3><p id="gtxt"></p></div></div>
@@ -64,9 +67,25 @@ function drawTable(){const st=tabs[comp];if(!st)return;
 document.querySelectorAll('#ttabs button').forEach(b=>b.style.display=st.some(x=>x.type===b.dataset.t.toUpperCase())?'':'none');
 const t=st.find(x=>x.type===tab.toUpperCase())||st[0];if(!t)return;
 $('#tbl').innerHTML=t.table.map(r=>`<tr class="${r.team.id==BVB?'me':''}"><td><span class="pos">${r.position}</span><img src="${r.team.crest||''}">${nm(r.team)}</td><td class="p">${r.points}</td><td>${r.playedGames}</td><td>${r.won}-${r.draw}-${r.lost}</td><td>${r.goalsFor}:${r.goalsAgainst}</td><td>${r.goalDifference}</td></tr>`).join('')}
+
+const esc=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),dc={};
+function detHTML(d){
+ const tn=id=>esc(nm(id==d.homeTeam.id?d.homeTeam:d.awayTeam)),mi=(a,b)=>`${a??''}${b?'+'+b:''}'`;
+ const ev=[...(d.goals||[]).map(g=>({m:g.minute||0,x:g.injuryTime||0,k:`${mi(g.minute,g.injuryTime)} ⚽ <b>${esc(g.scorer?.name)}</b>${g.type==='OWN'?' (Eigentor)':g.type==='PENALTY'?' (Elfmeter)':''}${g.score?` <span class="sm">${g.score.home}:${g.score.away}</span>`:''}`,t:g.team?.id})),
+ ...(d.bookings||[]).map(b=>({m:b.minute||0,x:0,k:`${mi(b.minute)} <span class="dot ${b.card==='YELLOW'?'y':'r'}"></span> ${esc(b.player?.name)}${b.card==='YELLOW_RED'?' (Gelb-Rot)':''}`,t:b.team?.id}))].sort((a,b)=>a.m-b.m||a.x-b.x);
+ const evH=ev.length?`<div class="dh">Tore &amp; Karten</div>`+ev.map(e=>`<div class="ev2">${e.k} <span class="sm">${e.t?tn(e.t):''}</span></div>`).join(''):'';
+ const lu=t=>t.lineup?.length?`<div><div class="dh">${esc(nm(t))}${t.formation?' · '+esc(t.formation):''}</div>${t.lineup.map(p=>`<div>${p.shirtNumber??''} ${esc(p.name)}</div>`).join('')}${t.bench?.length?`<div class="sm" style="margin-top:6px">Bank: ${t.bench.map(p=>esc(p.name)).join(', ')}</div>`:''}${t.coach?.name?`<div class="sm">Trainer: ${esc(t.coach.name)}</div>`:''}</div>`:'';
+ const l=lu(d.homeTeam)+lu(d.awayTeam);
+ if(!evH&&!l)return'<div class="sm">Für dieses Spiel liefert die API keine Details (im kostenlosen Tarif teils nicht enthalten).</div>';
+ return evH+(l?`<div class="dh" style="margin-top:10px">Aufstellung</div><div class="lu">${l}</div>`:'')}
+$('#hist').addEventListener('click',async e=>{const w=e.target.closest('.mw.click');if(!w)return;
+ w.classList.toggle('open');const box=w.querySelector('.det');if(!w.classList.contains('open')||box.dataset.ok)return;
+ box.innerHTML='<div class="sm">Lade Details…</div>';
+ try{const id=w.dataset.id;dc[id]=dc[id]||await j('/api/match/'+id);if(dc[id].error)throw 0;box.innerHTML=detHTML(dc[id]);box.dataset.ok=1}
+ catch(x){box.innerHTML='<div class="sm">Details konnten nicht geladen werden.</div>'}});
 function drawMatches(){const fin=all.filter(m=>m.status==='FINISHED').reverse(),up=all.filter(m=>['SCHEDULED','TIMED'].includes(m.status));
 $('#hist').innerHTML=(mt==='past'?fin:up).map(row).join('')||'<div class="sm">Keine Spiele.</div>'}
-const row=m=>`<div class="m"><span>${nm(m.homeTeam)} <img src="${m.homeTeam.crest}"></span><span class="s">${m.status==='FINISHED'?`${m.score.fullTime.home??'-'} : ${m.score.fullTime.away??'-'}`:new Date(m.utcDate).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span><span><img src="${m.awayTeam.crest}"> ${nm(m.awayTeam)}</span></div><div class="sm" style="text-align:center">${m.competition?.name||''} · ${fmt(m.utcDate)}</div>`;
+const row=m=>`<div class="mw ${m.status==='FINISHED'?'click':''}" data-id="${m.id}"><div class="m"><span>${nm(m.homeTeam)} <img src="${m.homeTeam.crest}"></span><span class="s">${m.status==='FINISHED'?`${m.score.fullTime.home??'-'} : ${m.score.fullTime.away??'-'}`:new Date(m.utcDate).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span><span><img src="${m.awayTeam.crest}"> ${nm(m.awayTeam)}</span></div><div class="sm" style="text-align:center">${m.competition?.name||''} · ${fmt(m.utcDate)}${m.status==='FINISHED'?' · 👆 Details':''}</div><div class="det"></div></div>`;
 async function loadMatches(){try{const {matches}=await j('/api/matches');
 all=matches;drawMatches();
 nextM=matches.find(m=>['SCHEDULED','TIMED'].includes(m.status));
