@@ -37,26 +37,33 @@ footer{text-align:center;color:#777;font-size:12px;padding:24px 12px}
 <header><h1>Borussia Dortmund</h1></header>
 <main>
 <section class="card full" id="nextc"><h2>Nächster Gegner</h2><div id="next">Lade…</div></section>
-<section class="card"><h2>Bundesliga-Tabelle</h2><div class="tabs"><button data-t="total" class="on">Gesamt</button><button data-t="home">Heim</button><button data-t="away">Auswärts</button></div>
-<table><thead><tr><th>#</th><th>Verein</th><th>Sp</th><th>Diff</th><th>Pkt</th></tr></thead><tbody id="tbl"></tbody></table></section>
-<section class="card"><h2>BVB-Spiele</h2><div id="hist"></div></section>
+<section class="card"><h2>Tabelle</h2><div class="tabs" id="ctabs" style="margin-bottom:8px"><button data-c="BL1" class="on">Bundesliga</button><button data-c="CL">Champions League</button></div><div class="tabs" id="ttabs"><button data-t="total" class="on">Gesamt</button><button data-t="home">Heim</button><button data-t="away">Auswärts</button></div>
+<table><thead><tr><th>#</th><th>Verein</th><th>Sp</th><th title="Geschossene Tore">Tore</th><th title="Kassierte Tore">Geg.</th><th>Diff</th><th>Pkt</th></tr></thead><tbody id="tbl"></tbody></table></section>
+<section class="card"><h2>BVB-Spiele</h2><div class="tabs" id="mtabs" style="margin-bottom:8px"><button data-m="past" class="on">Vergangene</button><button data-m="up">Nächste</button></div><div id="hist"></div></section>
 </main>
-<footer>Inoffizielle Fanseite. Borussia Dortmund, BVB und das Wappen sind Marken der Borussia Dortmund GmbH &amp; Co. KGaA. © Alle Rechte bei den jeweiligen Inhabern. Daten: football-data.org</footer>
+<footer> Borussia  Dortmund </footer>
 <button id="mute">🔊</button><audio id="song" src="ole.mp3"></audio>
 <script>
-const BVB=4,$=s=>document.querySelector(s);let tab='total',tables,nextM,lastG=null;
-const j=async u=>(await fetch(u)).json(),nm=t=>t.shortName||t.name;
+const BVB=4,$=s=>document.querySelector(s);let tab='total',comp='BL1',tabs={},mt='past',all=[],nextM,lastG=null;
+const j=async u=>(await fetch(u)).json(),nm=t=>t.shortName||t.name||'TBD';
 const fmt=d=>new Date(d).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const song=$('#song');
 $('#go').onclick=()=>{$('#enter').remove();song.volume=.7;song.play().then(()=>{song.pause();song.currentTime=0}).catch(()=>{})};
 $('#mute').onclick=()=>{song.muted=!song.muted;$('#mute').textContent=song.muted?'🔇':'🔊'};
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));drawTable()});
-async function loadTables(){try{tables=(await j('/api/tables')).standings;drawTable()}catch(e){}}
-function drawTable(){const t=tables?.find(x=>x.type===tab.toUpperCase());if(!t)return;
-$('#tbl').innerHTML=t.table.map(r=>`<tr class="${r.team.id==BVB?'me':''}"><td>${r.position}</td><td><img src="${r.team.crest}">${nm(r.team)}</td><td>${r.playedGames}</td><td>${r.goalDifference}</td><td><b>${r.points}</b></td></tr>`).join('')}
-const row=m=>`<div class="m"><span>${nm(m.homeTeam)} <img src="${m.homeTeam.crest}"></span><span class="s">${m.score.fullTime.home??'-'} : ${m.score.fullTime.away??'-'}</span><span><img src="${m.awayTeam.crest}"> ${nm(m.awayTeam)}</span></div><div class="sm" style="text-align:center">${m.competition?.name||''} · ${fmt(m.utcDate)}</div>`;
+const sel=(id,fn)=>document.querySelectorAll(id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll(id+' button').forEach(x=>x.classList.toggle('on',x==b));fn(b)});
+sel('#ttabs',b=>{tab=b.dataset.t;drawTable()});
+sel('#ctabs',b=>{comp=b.dataset.c;tab='total';document.querySelectorAll('#ttabs button').forEach(x=>x.classList.toggle('on',x.dataset.t==='total'));tabs[comp]?drawTable():loadTables()});
+sel('#mtabs',b=>{mt=b.dataset.m;drawMatches()});
+async function loadTables(){try{tabs[comp]=(await j('/api/tables/'+comp)).standings;drawTable()}catch(e){}}
+function drawTable(){const st=tabs[comp];if(!st)return;
+document.querySelectorAll('#ttabs button').forEach(b=>b.style.display=st.some(x=>x.type===b.dataset.t.toUpperCase())?'':'none');
+const t=st.find(x=>x.type===tab.toUpperCase())||st[0];if(!t)return;
+$('#tbl').innerHTML=t.table.map(r=>`<tr class="${r.team.id==BVB?'me':''}"><td>${r.position}</td><td><img src="${r.team.crest||''}">${nm(r.team)}</td><td>${r.playedGames}</td><td>${r.goalsFor}</td><td>${r.goalsAgainst}</td><td>${r.goalDifference}</td><td><b>${r.points}</b></td></tr>`).join('')}
+function drawMatches(){const fin=all.filter(m=>m.status==='FINISHED').reverse(),up=all.filter(m=>['SCHEDULED','TIMED'].includes(m.status));
+$('#hist').innerHTML=(mt==='past'?fin:up).map(row).join('')||'<div class="sm">Keine Spiele.</div>'}
+const row=m=>`<div class="m"><span>${nm(m.homeTeam)} <img src="${m.homeTeam.crest}"></span><span class="s">${m.status==='FINISHED'?`${m.score.fullTime.home??'-'} : ${m.score.fullTime.away??'-'}`:new Date(m.utcDate).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span><span><img src="${m.awayTeam.crest}"> ${nm(m.awayTeam)}</span></div><div class="sm" style="text-align:center">${m.competition?.name||''} · ${fmt(m.utcDate)}</div>`;
 async function loadMatches(){try{const {matches}=await j('/api/matches');
-$('#hist').innerHTML=matches.filter(m=>m.status==='FINISHED').reverse().map(row).join('');
+all=matches;drawMatches();
 nextM=matches.find(m=>['SCHEDULED','TIMED'].includes(m.status));
 const live=matches.find(m=>['IN_PLAY','PAUSED','LIVE'].includes(m.status));
 drawNext();live?drawLive(live):($('#live').style.display='none',lastG=null)}catch(e){}}
