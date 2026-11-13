@@ -10,8 +10,9 @@ async function api(p, ttl) {
 const route = (path, f, ttl) => app.get(path, async (q, s) => {
   try { s.json(await api(f(q), ttl)); } catch (e) { s.status(500).json({ error: e.message }); }
 });
-route('/api/tables', () => '/competitions/BL1/standings', 60);
+route('/api/tables/:c', q => '/competitions/' + (q.params.c === 'CL' ? 'CL' : 'BL1') + '/standings', 60);
 route('/api/matches', () => '/teams/4/matches', 30);
 route('/api/match/:id', q => '/matches/' + String(q.params.id).replace(/\D/g, ''), 15);
+app.get('/health', (q, s) => s.send('ok'));
 app.use(express.static('public'));
 app.listen(process.env.PORT || 3000);
