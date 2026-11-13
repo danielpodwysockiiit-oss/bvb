@@ -1,0 +1,81 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BVB Fanseite</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--y:#FDE100;--b:#0a0a0a;--c:#151515;--l:#2a2a2a}
+*{box-sizing:border-box}body{margin:0;background:var(--b);color:#fff;font-family:'Oswald',Arial,sans-serif}
+body::before{content:"";position:fixed;inset:0;background:url(https://crests.football-data.org/4.png) center/min(85vw,720px) no-repeat;opacity:.08;z-index:-1}
+header{text-align:center;padding:28px 12px 8px}h1{margin:0;color:var(--y);font-size:clamp(32px,7vw,64px);letter-spacing:3px;text-transform:uppercase;text-shadow:0 0 25px #fde10066}
+main{max-width:1100px;margin:auto;padding:12px;display:grid;gap:16px;grid-template-columns:1fr 1fr}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+.card{background:#151515e6;border:1px solid var(--l);border-top:4px solid var(--y);border-radius:12px;padding:16px}
+.card h2{margin:0 0 12px;color:var(--y);text-transform:uppercase;letter-spacing:2px;font-size:20px}.full{grid-column:1/-1}
+.tabs button{background:none;border:1px solid var(--y);color:var(--y);padding:6px 14px;margin-right:6px;border-radius:20px;font:inherit;cursor:pointer}
+.tabs button.on{background:var(--y);color:#000}
+table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:5px 4px;text-align:center}td:nth-child(2),th:nth-child(2){text-align:left}
+td img{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:6px}tr{border-bottom:1px solid var(--l)}tr.me{background:var(--y);color:#000;font-weight:700}
+.vs{display:flex;align-items:center;justify-content:center;gap:18px;text-align:center}.vs img{width:72px;height:72px;object-fit:contain}
+.cd{display:flex;gap:10px;justify-content:center;margin-top:14px}.cd div{background:#000;border:1px solid var(--y);border-radius:8px;padding:8px 12px;min-width:68px;text-align:center}
+.cd b{display:block;font-size:32px;color:var(--y)}.cd span{font-size:12px;text-transform:uppercase;color:#aaa}
+.m{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--l);font-size:15px;gap:6px}
+.m img{width:20px;height:20px;object-fit:contain}.m .s{background:var(--y);color:#000;font-weight:700;padding:2px 10px;border-radius:6px}
+#hist{max-height:520px;overflow:auto}.sm{font-size:12px;color:#999}
+#live{display:none;position:sticky;top:0;z-index:5;background:var(--y);color:#000;padding:10px 14px;text-align:center}
+#live .top{font-size:clamp(18px,4vw,28px);font-weight:700}#live .ev{font-size:14px;margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:center}
+.dot{display:inline-block;width:10px;height:14px;border-radius:2px;vertical-align:middle}.y{background:#ffd500;border:1px solid #000}.r{background:#e00}
+.pulse{animation:p 1s infinite}@keyframes p{50%{opacity:.3}}
+#goal{position:fixed;inset:0;display:none;place-items:center;background:#000d;z-index:50;text-align:center}
+#goal.on{display:grid}#goal h3{margin:0;font-size:clamp(60px,18vw,220px);color:var(--y);animation:z 1.2s ease-out infinite alternate;text-shadow:0 0 40px var(--y)}
+#goal p{font-size:clamp(20px,4vw,40px);margin:0}@keyframes z{from{transform:scale(.7) rotate(-4deg)}to{transform:scale(1.1) rotate(3deg)}}
+#enter{position:fixed;inset:0;z-index:99;background:#000;display:grid;place-items:center;text-align:center}
+#enter button{background:var(--y);border:0;padding:18px 34px;font:700 24px Oswald;border-radius:40px;cursor:pointer;text-transform:uppercase;animation:p 1.5s infinite}
+#mute{position:fixed;right:12px;bottom:12px;background:var(--y);border:0;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;z-index:10}
+footer{text-align:center;color:#777;font-size:12px;padding:24px 12px}
+</style></head><body>
+<div id="enter"><div><img src="https://crests.football-data.org/4.png" width="140"><h1>Echte Liebe</h1><button id="go">Ole, jetzt kommt der BVB!</button></div></div>
+<div id="live"></div><div id="goal"><div><h3>TORRRR!</h3><p id="gtxt"></p></div></div>
+<header><h1>Borussia Dortmund</h1></header>
+<main>
+<section class="card full" id="nextc"><h2>Nächster Gegner</h2><div id="next">Lade…</div></section>
+<section class="card"><h2>Bundesliga-Tabelle</h2><div class="tabs"><button data-t="total" class="on">Gesamt</button><button data-t="home">Heim</button><button data-t="away">Auswärts</button></div>
+<table><thead><tr><th>#</th><th>Verein</th><th>Sp</th><th>Diff</th><th>Pkt</th></tr></thead><tbody id="tbl"></tbody></table></section>
+<section class="card"><h2>BVB-Spiele</h2><div id="hist"></div></section>
+</main>
+<footer>Inoffizielle Fanseite. Borussia Dortmund, BVB und das Wappen sind Marken der Borussia Dortmund GmbH &amp; Co. KGaA. © Alle Rechte bei den jeweiligen Inhabern. Daten: football-data.org</footer>
+<button id="mute">🔊</button><audio id="song" src="ole.mp3" loop></audio><audio id="horn" src="tor.mp3"></audio>
+<script>
+const BVB=4,$=s=>document.querySelector(s);let tab='total',tables,nextM,lastG=null;
+const j=async u=>(await fetch(u)).json(),nm=t=>t.shortName||t.name;
+const fmt=d=>new Date(d).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const song=$('#song');
+$('#go').onclick=()=>{$('#enter').remove();song.volume=.6;song.play().catch(()=>{})};
+$('#mute').onclick=()=>{song.muted=!song.muted;$('#mute').textContent=song.muted?'🔇':'🔊'};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));drawTable()});
+async function loadTables(){try{tables=(await j('/api/tables')).standings;drawTable()}catch(e){}}
+function drawTable(){const t=tables?.find(x=>x.type===tab.toUpperCase());if(!t)return;
+$('#tbl').innerHTML=t.table.map(r=>`<tr class="${r.team.id==BVB?'me':''}"><td>${r.position}</td><td><img src="${r.team.crest}">${nm(r.team)}</td><td>${r.playedGames}</td><td>${r.goalDifference}</td><td><b>${r.points}</b></td></tr>`).join('')}
+const row=m=>`<div class="m"><span>${nm(m.homeTeam)} <img src="${m.homeTeam.crest}"></span><span class="s">${m.score.fullTime.home??'-'} : ${m.score.fullTime.away??'-'}</span><span><img src="${m.awayTeam.crest}"> ${nm(m.awayTeam)}</span></div><div class="sm" style="text-align:center">${m.competition?.name||''} · ${fmt(m.utcDate)}</div>`;
+async function loadMatches(){try{const {matches}=await j('/api/matches');
+$('#hist').innerHTML=matches.filter(m=>m.status==='FINISHED').reverse().map(row).join('');
+nextM=matches.find(m=>['SCHEDULED','TIMED'].includes(m.status));
+const live=matches.find(m=>['IN_PLAY','PAUSED','LIVE'].includes(m.status));
+drawNext();live?drawLive(live):($('#live').style.display='none',lastG=null)}catch(e){}}
+function drawNext(){const m=nextM;if(!m){$('#next').textContent='Kein Spiel angesetzt.';return}
+const home=m.homeTeam.id==BVB;
+$('#next').innerHTML=`<div class="vs"><div><img src="${m.homeTeam.crest}"><br>${nm(m.homeTeam)}</div><b style="font-size:28px;color:var(--y)">VS</b><div><img src="${m.awayTeam.crest}"><br>${nm(m.awayTeam)}</div></div><div class="sm" style="text-align:center;margin-top:8px">${m.competition?.name||''} · ${home?'Heimspiel':'Auswärtsspiel'} · ${fmt(m.utcDate)}</div><div class="cd" id="cd"></div>`}
+function tick(){const el=$('#cd');if(!el||!nextM)return;let s=Math.max(0,Math.floor((new Date(nextM.utcDate)-Date.now())/1000));
+const v=[['Tage',86400],['Std',3600],['Min',60],['Sek',1]].map(([l,d])=>{const n=Math.floor(s/d);s-=n*d;return`<div><b>${String(n).padStart(2,'0')}</b><span>${l}</span></div>`});el.innerHTML=v.join('')}
+setInterval(tick,1000);
+async function drawLive(m){let d=m;try{d=await j('/api/match/'+m.id)}catch(e){}
+const sc=d.score.fullTime,h=sc.home??0,a=sc.away??0,mine=m.homeTeam.id==BVB?h:a;
+if(lastG!==null&&mine>lastG)goal(d);lastG=mine;
+let min=d.status==='PAUSED'?'Halbzeit':d.minute!=null?`${d.minute}'${d.injuryTime?` +${d.injuryTime}`:''}`:'LIVE';
+const ev=[...(d.goals||[]).map(g=>({m:g.minute,t:`⚽ ${g.minute}'${g.injuryTime?'+'+g.injuryTime:''} ${g.scorer?.name||''}`})),
+...(d.bookings||[]).map(b=>({m:b.minute,t:`<span class="dot ${b.card==='RED'?'r':'y'}"></span> ${b.minute}' ${b.player?.name||''}`}))].sort((x,y)=>x.m-y.m);
+const L=$('#live');L.style.display='block';
+L.innerHTML=`<div class="top"><span class="pulse">●</span> ${min} &nbsp; ${nm(m.homeTeam)} ${h}:${a} ${nm(m.awayTeam)}</div><div class="ev">${ev.map(e=>`<span>${e.t}</span>`).join('')}</div>`}
+function goal(d){const g=(d.goals||[]).slice(-1)[0];$('#gtxt').textContent=g?.scorer?.name?`${g.scorer.name} ${g.minute}'`:'Dortmund trifft!';
+$('#goal').classList.add('on');$('#horn').play().catch(()=>{});setTimeout(()=>$('#goal').classList.remove('on'),6000)}
+$('#goal').onclick=()=>$('#goal').classList.remove('on');
+loadTables();loadMatches();setInterval(loadMatches,20000);setInterval(loadTables,120000);
+</script></body></html>
